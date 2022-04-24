@@ -1,15 +1,31 @@
 #include <iostream>
-//#include <SDL.h>
+#include <SDL.h>
+#include <SDL_image.h>
 //#include <stdio.h>
 #include "frame/Game.h"
+#include "frame/Sprite.h"
 
 using namespace std;
 
-int main(int argc, char *argv[]){
+int main(int argc, char **argv){
 
     Game game{};
-    game.initalize("My First Game!",0,0,300,500,false);
+    game.initalize("My First Game!",1420,580,500,500,false);
+    SDL_Texture* texture = game.getTexture("src/assets/lucy.png");
+
+    Sprite myRectangle{&game};
+    ImageComponent rectangleComp{&myRectangle};
+    rectangleComp.setTexture(texture);
+
+    myRectangle.setPosition(Vector2{300,200});
+    myRectangle.setRotation(1.4);
+    
+    if (game.isRunning()){
+        game.runLoop();
+    }
+
     return 0;
+
 }
 
 
@@ -23,50 +39,3 @@ int main(int argc, char *argv[]){
 
 
 
-
-
-
-
-
-
-/*
-int main(int argc, char* argv[]) {
-
-    SDL_Window *window;                    // Declare a pointer
-
-    SDL_Init(SDL_INIT_VIDEO);              // Initialize SDL2
-
-    // Create an application window with the following settings:
-    window = SDL_CreateWindow(
-        "An SDL2 window",                  // window title
-        SDL_WINDOWPOS_UNDEFINED,           // initial x position
-        SDL_WINDOWPOS_UNDEFINED,           // initial y position
-        1920,                               // width, in pixels
-        1080,                               // height, in pixels
-        SDL_WINDOW_OPENGL                  // flags - see below
-    );
-
-    // Check that the window was successfully created
-    if (window == NULL) {
-        // In the case that the window could not be made...
-        printf("Could not create window: %s\n", SDL_GetError());
-        return 1;
-    }
-    SDL_Renderer *renderer = SDL_CreateRenderer(window,-1,0);
-
-    for (int i = 0; i < 255; ++i){
-        SDL_SetRenderDrawColor(renderer, i, i, i, i);
-        SDL_RenderClear(renderer);
-        SDL_RenderPresent(renderer);
-        SDL_Delay(0.5);
-    }
-    SDL_Delay(100);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    return 0;
-}
-*/
-/*
-int main(int argc, char *argv[]){
-    cout << "!!!Program Running!!!" << endl;
-}*/
