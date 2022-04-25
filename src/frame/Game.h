@@ -7,6 +7,13 @@
 #include "vector"
 #include "Sprite.h"
 
+
+namespace GameLoopFunctions{
+    void processMainInput();
+    void updateMainGame();
+    void generateMainOutput();
+};
+
 class Game{
 public:
     Game();

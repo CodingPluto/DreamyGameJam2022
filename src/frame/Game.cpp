@@ -46,23 +46,26 @@ void Game::updateGame(){
         delete deadSprite;
     }
     deadSprites.clear();
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
-    for (auto imageComponent : imageComponents){
-        imageComponent->draw(renderer);
-    }
-    SDL_RenderClear(renderer);
-    
+    //SDL_SetRenderDrawColor(renderer, 255, 255, 0, 0);
     // now update game objects
 }
 void Game::generateOutput(){
+    for (auto imageComponent : imageComponents){
+        imageComponent->draw(renderer);
+    }
+    SDL_RenderPresent(renderer);
+    SDL_RenderClear(renderer);
     outputDelta();
 }
 
 void Game::runLoop(){
     while (gameRunning){
         if (gameRunning) processInput();
+        if (gameRunning) GameLoopFunctions::processMainInput();
         if (gameRunning) updateGame();
+        if (gameRunning) GameLoopFunctions::updateMainGame();
         if (gameRunning) generateOutput();
+        if (gameRunning) GameLoopFunctions::generateMainOutput();
     }
 }
 
@@ -85,7 +88,6 @@ Game::~Game(){
 void Game::exitGame(){
     cout << "Exiting Game!" << endl;
     gameRunning = false;
-    cout << "Still here" << endl;
     clearData();
     IMG_Quit();
     SDL_DestroyRenderer(renderer);
@@ -146,9 +148,7 @@ void Game::AddImage(ImageComponent *imageComponent){
 void Game::RemoveImage(ImageComponent *ImageComponent){
     cout << "Removing Image" << endl;
     auto it = imageComponents.begin();
-    cout << "Starting while loop" << endl;
     while(it != imageComponents.end() && *it != ImageComponent){++it;}
-    cout << "Removing Image 2" << endl;
     if (it != imageComponents.end()){
         imageComponents.erase(it);
     }

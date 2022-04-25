@@ -1,8 +1,11 @@
 #ifndef SPRITE_
 #define SPRITE_
 #include <vector>
+#include <array>
+#include <unordered_map>
 #include "math.h"
 #include "Game.h"
+#include "SDL.h"
 
 class Component{
 public:
@@ -17,6 +20,8 @@ protected:
     int updateOrder;
 
 };
+
+
 
 class ImageComponent : public Component{
 
@@ -37,6 +42,29 @@ protected:
     int textureWidth;
     int textureHeight;
 };
+
+
+class AnimationComponent : public ImageComponent{
+public:
+    AnimationComponent(class Sprite* baseSprite, int fps, bool looping, int updateOrder = 1000);
+    ~AnimationComponent();
+    void update(float deltaTime); //!
+    void addAnimationTextures(const std::vector<SDL_Texture*> &textures, std::string animationName); //!
+    void setAnimation(std::string animationName){currentAnimationTextures = animationName;}
+    float getAnimationFPS(){return fps;}
+    void setAnimationFPS(float newFps){fps = newFps;}
+    void clearAnimation();
+    void toggleLooping(bool newLooping){looping = newLooping;}
+private:
+    bool looping;
+    bool updateAnimation = true;
+    float fps;
+    std::unordered_map<std::string, std::vector<SDL_Texture*>> mapAnimationTextures;
+    std::string currentAnimationTextures;
+    float currentFrame;
+
+};
+
 
 
 
@@ -64,11 +92,17 @@ public:
 
 
     Vector2 getPosition(){return position;}
-    void setPosition(Vector2 newPosition){position = newPosition;}
+    void setPosition(float x, float y){setX(x); setY(y);}
+    void changePosition(float x, float y){changeX(x); changeY(y);}
+    void setX(float x){position.x = x;}
+    void setY(float y){position.y = y;}
+    void changeX(float x);
+    void changeY(float y);
     float getScale(){return scale;}
+    void setScale(float newScale){scale = newScale;}
     float getRotation(){return rotation;}
     void setRotation(float newRotation){rotation = newRotation;}
-    
+
 
     // Add ways to add & remove components
 protected:
@@ -77,7 +111,7 @@ protected:
     float rotation = 0; // radians
 private:
     Game *gameInstance;
-    State state;
+    State state = Active;
     std::vector<class Component*> components;
 };
 

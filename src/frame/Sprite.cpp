@@ -10,6 +10,46 @@ using namespace std;
 
 
 
+AnimationComponent::AnimationComponent(Sprite* baseSprite, int fps, bool looping, int updateOrder): ImageComponent(baseSprite,updateOrder),fps(fps),looping(looping),currentFrame(0.0){
+    cout << "Animation Component Created!" << endl;
+    vector<SDL_Texture*> nullTextures;
+    mapAnimationTextures["NONE"] = nullTextures;
+}
+
+void AnimationComponent::clearAnimation(){
+    currentAnimationTextures = "NONE";
+    texture = nullptr;
+}
+
+
+AnimationComponent::~AnimationComponent(){
+    cout << "Animation Component Has Been Destroyed" << endl;
+}
+
+void AnimationComponent::update(float deltaTime){
+    if (mapAnimationTextures[currentAnimationTextures].size() > 0){
+        if (updateAnimation){
+            currentFrame += fps * deltaTime;
+        }
+        while(currentFrame >= mapAnimationTextures[currentAnimationTextures].size()){
+            if (looping){
+                currentFrame -= mapAnimationTextures[currentAnimationTextures].size();
+            }
+            else{
+                currentFrame -= mapAnimationTextures[currentAnimationTextures].size();
+                updateAnimation = false;
+            }
+        }
+        setTexture(mapAnimationTextures[currentAnimationTextures][(int)(currentFrame)]);
+    }
+}
+
+void AnimationComponent::addAnimationTextures(const std::vector<SDL_Texture*> &textures, string animationName){
+    mapAnimationTextures[animationName] = textures;
+}
+
+
+
 void ImageComponent::draw(SDL_Renderer *renderer){
     if (texture){
         SDL_Rect rect;
@@ -23,14 +63,13 @@ void ImageComponent::draw(SDL_Renderer *renderer){
         cout << "X: " << rect.x << endl;
         cout << "Y: " << rect.y << endl;*/
         SDL_RenderCopyEx(renderer,texture,nullptr,&rect,-Math::ToDegrees(baseSprite->getRotation()),nullptr,SDL_FLIP_NONE);
-        SDL_RenderPresent(renderer);
     }
 }
 
 void ImageComponent::setTexture(SDL_Texture *texture){
     this->texture = texture;
     SDL_QueryTexture(texture,nullptr,nullptr,&textureWidth,&textureHeight); 
-    cout << "New texture size{  Width: " << textureWidth << "  |  Height: " << textureHeight << "  }" << endl;
+    //cout << "New texture size{  Width: " << textureWidth << "  |  Height: " << textureHeight << "  }" << endl;
 }
 
 ImageComponent::ImageComponent(Sprite *baseSprite, int drawOrder):Component(baseSprite),texture(nullptr),drawOrder(drawOrder),textureWidth(0),textureHeight(0){
@@ -44,11 +83,9 @@ ImageComponent::~ImageComponent(){
 
 
 Component::Component(Sprite *baseSprite, int updateOrder): baseSprite(baseSprite), updateOrder(updateOrder) {
-
     baseSprite->addComponent(this);
 }
 Component::~Component(){
-    cout << "Trying to remove component" << endl;
     baseSprite->removeComponent(this);
     cout << "Removed Component" << endl;
 }
@@ -69,16 +106,15 @@ Sprite::Sprite(Game *game){
 }
 
 void Sprite::updateComponents(float deltaTime){
-    cout << "updating sprite componenets" << endl;
+    for (auto it = components.begin(); it < components.end(); ++it){
+        (*it)->update(deltaTime);
+    }
 }
 
 
-void Sprite::updateSprite(float deltaTime){}
-
-void Sprite::update(float deltaTime){
+void Sprite::updateSprite(float deltaTime){
     if (state == Active){
         updateComponents(deltaTime);
-        updateSprite(deltaTime);
     }
 }
 
@@ -105,3 +141,7 @@ void Sprite::outputComponents(){
         cout << *it << endl;
     }
 }
+void Sprite::changeY(float y){
+    position.y += y * gameInstance->getDeltaTime();
+}
+void Sprite::changeX(float x){position.x += x * gameInstance->getDeltaTime();}
