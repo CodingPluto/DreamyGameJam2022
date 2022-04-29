@@ -17,12 +17,14 @@ void Game::processInput(){
                 break;
         }
     }
-    const Uint8 *keys = SDL_GetKeyboardState(NULL);
+    keys = SDL_GetKeyboardState(NULL);
     if (keys[SDL_SCANCODE_ESCAPE] || (keys[SDL_SCANCODE_LCTRL] && keys[SDL_SCANCODE_C])){
         exitGame();
     }
-
 }
+
+
+
 void Game::updateGame(){
     while (!SDL_TICKS_PASSED(SDL_GetTicks(), ticksThisFrame + 16));
     deltaTime = (SDL_GetTicks() - ticksThisFrame) / 1000.0;
@@ -31,6 +33,7 @@ void Game::updateGame(){
     updatingSprites = true;
     for (auto sprite : sprites){
         sprite->updateSprite(deltaTime);
+        sprite->update();
     }
     for (auto pendingSprite : pendingSprites){
         sprites.emplace_back(pendingSprite);
@@ -58,16 +61,6 @@ void Game::generateOutput(){
     outputDelta();
 }
 
-void Game::runLoop(){
-    while (gameRunning){
-        if (gameRunning) processInput();
-        if (gameRunning) GameLoopFunctions::processMainInput();
-        if (gameRunning) updateGame();
-        if (gameRunning) GameLoopFunctions::updateMainGame();
-        if (gameRunning) generateOutput();
-        if (gameRunning) GameLoopFunctions::generateMainOutput();
-    }
-}
 
 void Game::outputDelta(){
     cout << "Delta: " << deltaTime << endl;

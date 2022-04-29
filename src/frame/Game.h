@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "vector"
 #include "Sprite.h"
+#include "math.h"
 
 
 namespace GameLoopFunctions{
@@ -21,7 +22,6 @@ public:
     void initalize(const char title[], unsigned short xStart, unsigned short yStart, unsigned short width, unsigned short height, bool fullscreen);
     float getDeltaTime();
     void incrementTicks();
-    void runLoop();
     void exitGame();
     bool isRunning();
     void outputDelta();
@@ -38,11 +38,13 @@ public:
     //void render();
     //bool isRunning();
     //void stopGame();
-
-private:
     void processInput();
     void updateGame();
     void generateOutput();
+    const Uint8* getKeys(){return keys;}
+    //unordered_map<Vector2,vector<Component*>> collisionMap;
+
+private:
     float deltaTime = 0;
     bool gameRunning = false;
     std::unordered_map<std::string,SDL_Texture*> textureMap;
@@ -51,6 +53,8 @@ private:
     std::vector<class ImageComponent*> imageComponents;
     bool updatingSprites = false;
     uint64_t ticksThisFrame = 0;
+
+    const Uint8 *keys;
     SDL_Window *window;
     SDL_Renderer *renderer;
 };
