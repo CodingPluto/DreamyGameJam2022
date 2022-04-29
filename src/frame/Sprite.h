@@ -97,6 +97,10 @@ class CollisionComponent : public Component{
         bool checkCollision(Component* collider1,Component* collider2);
         std::vector<Component*> getCollidingObjects(){return collidingObjects;}
         void addCollidingObject(Component* collidingObject);
+        float getHitboxLength(){return hitbox.x;}
+        float getHitboxHeight(){return hitbox.y;}
+        void setHitbox(float length, float height){hitbox.x = length; hitbox.y = height;}
+        Vector2 hitbox{0,0};
     private:
         std::vector<Component*> collidingObjects;
     
