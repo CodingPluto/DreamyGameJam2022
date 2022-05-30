@@ -9,6 +9,7 @@
 #include "math.h"
 
 
+
 namespace GameLoopFunctions{
     void processMainInput();
     void updateMainGame();
@@ -35,17 +36,18 @@ public:
     void outputSprites();
     void outputImageComponents();
     SDL_Texture* getTexture(const std::string& textureName);
-    //void render();
-    //bool isRunning();
-    //void stopGame();
     void processInput();
     void updateGame();
     void generateOutput();
+    unsigned short getDisplayWidth(){return displayWidth;}
+    unsigned short getDisplayHeight(){return displayHeight;}
     const Uint8* getKeys(){return keys;}
-    //unordered_map<Vector2,vector<Component*>> collisionMap;
+    double deltaTime = 0;
+
 
 private:
-    float deltaTime = 0;
+    int displayWidth;
+    int displayHeight;
     bool gameRunning = false;
     std::unordered_map<std::string,SDL_Texture*> textureMap;
     std::vector<class Sprite*> sprites;

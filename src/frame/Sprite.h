@@ -7,6 +7,8 @@
 #include "Game.h"
 #include "SDL.h"
 
+#define DEFAULTID 0
+
 
 
 
@@ -24,6 +26,8 @@ protected:
 
 };
 
+
+
 class ImageComponent : public Component{
 
 public:
@@ -33,8 +37,11 @@ public:
     virtual void setTexture(SDL_Texture *texture);
 
     int getDrawOrder() const {return drawOrder;}
-    int getTextureHeight() const {return textureHeight;}
-    int getTextureWidth() const {return textureWidth;}
+    int getTextureHeight();
+    int getTextureWidth();
+
+    bool getFlip(){return flip;}
+    void setFlip(bool newFlip){flip = newFlip;}
 
 
 protected:
@@ -42,6 +49,7 @@ protected:
     int drawOrder;
     int textureWidth;
     int textureHeight;
+    bool flip = false;
 };
 
 
@@ -70,11 +78,10 @@ class PhysicsComponent : public Component{
         void changeVelocityX(float velX){velocity.x += velX;}
         void changeVelocityY(float velY){velocity.y += velY;}
         void changeVelocity(Vector2 changeVelocity){velocity += changeVelocity;}
-        void setFriction(float newFriction){friction = newFriction;}
-        float getFriction(){return friction;}
-
-
-
+        void setFriction(float newFrictionX, float newFrictionY){setFrictionX(newFrictionX);setFrictionY(newFrictionY);}
+        void setFrictionX(float newFrictionX){frictionX = newFrictionX;}
+        void setFrictionY(float newFrictionY){frictionY = newFrictionY;}
+        Vector2 getFriction(){return Vector2{frictionX,frictionY};}
         void update(float deltaTime);
         
         
@@ -82,7 +89,8 @@ class PhysicsComponent : public Component{
         Vector2 velocity;
         Vector2 *positionPtr;
     private:
-        float friction = 0.1;
+        float frictionX = 0.1;
+        float frictionY = 0.1;
 
 };
 
@@ -90,17 +98,17 @@ class CollisionComponent : public Component{
     public:
         CollisionComponent(class Sprite* baseSprite, int updateOrder = 1000);
         ~CollisionComponent();
-        bool colliding = false;
         void touchPlane();
         void update(float deltaTime);
         static std::vector<Component*> collisionObjects;
         bool checkCollision(Component* collider1,Component* collider2);
         std::vector<Component*> getCollidingObjects(){return collidingObjects;}
         void addCollidingObject(Component* collidingObject);
-        float getHitboxLength(){return hitbox.x;}
+        /*float getHitboxLength(){return hitbox.x;}
         float getHitboxHeight(){return hitbox.y;}
         void setHitbox(float length, float height){hitbox.x = length; hitbox.y = height;}
-        Vector2 hitbox{0,0};
+        Vector2 hitbox{0,0};*/
+        bool colliding = false;
     private:
         std::vector<Component*> collidingObjects;
     
@@ -140,6 +148,8 @@ private:
 
 class Sprite{
 public:
+    int getID(){return id;}
+    void setID(int newID){id = newID;}
     enum State{
         Active,
         Frozen,
@@ -150,7 +160,7 @@ public:
 
     ~Sprite();
     Game* getGameInstance(){return gameInstance;}
-    virtual void update();
+    virtual void update(float deltaTime);
     void updateComponents(float deltaTime);
     virtual void updateSprite(float deltaTime);
     State getState() {return state;}
@@ -173,9 +183,16 @@ public:
     float getRotation(){return rotation;}
     void setRotation(float newRotation){rotation = newRotation;}
 
-    void setHitbox(float newLength, float newHeight){hitboxLength = newLength; hitboxHeight = newHeight;}
-    float getHitboxLength(){return hitboxLength;}
-    float getHitboxHeight(){return hitboxHeight;}
+    void setHitbox(float newLength, float newHeight,float hitboxOffsetX, float hitboxOffsetY){hitboxLength = newLength; hitboxHeight = newHeight; hitboxOffset.x = hitboxOffsetX; hitboxOffset.y = hitboxOffsetY;}
+    float getHitboxLength(){return hitboxLength * scale;}
+    float getHitboxHeight(){return hitboxHeight * scale;}
+    float getHitboxOffsetX(){return hitboxOffset.x * scale;}
+    float getHitboxOffsetY(){return hitboxOffset.y * scale;}
+    
+    void setState(State newState){state = newState;}
+    bool debugCollision = false;
+    int movementSpeed;
+    
 
 
     // Add ways to add & remove components
@@ -183,12 +200,14 @@ protected:
     Vector2 position;
     float scale = 5;
     float rotation = 0; // radians
-private:
     Game *gameInstance;
+    std::vector<class Component*> components;
+private:
+    int id = DEFAULTID;
+    Vector2 hitboxOffset{0,0};
     float hitboxLength = 0;
     float hitboxHeight = 0;
     State state = Active;
-    std::vector<class Component*> components;
 };
 
 

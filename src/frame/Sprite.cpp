@@ -13,7 +13,6 @@ vector<Component*> CollisionComponent::collisionObjects;
 void removeCollider(Component *colliderAddress){
     auto it = CollisionComponent::collisionObjects.begin();
     while(it < CollisionComponent::collisionObjects.end() && *it != colliderAddress){
-        cout << "Address: " << colliderAddress << endl;
         it++;
     }
     cout << "Deleting Collider" << endl;
@@ -26,6 +25,9 @@ void removeCollider(Component *colliderAddress){
 }
 
 
+int ImageComponent::getTextureHeight() {return textureHeight * baseSprite->getScale();}
+int ImageComponent::getTextureWidth() {return textureWidth * baseSprite->getScale();}
+
 
 StaticColliderComponent::StaticColliderComponent(Sprite* baseSprite, int updateOrder):Component(baseSprite,updateOrder){
     CollisionComponent::collisionObjects.emplace_back(this);
@@ -33,14 +35,15 @@ StaticColliderComponent::StaticColliderComponent(Sprite* baseSprite, int updateO
 }
 
 StaticColliderComponent::~StaticColliderComponent(){
+    cout << "Destroying Collider Object" << endl;
     removeCollider(this);
     cout << "Destroyed Collider Object" << endl;
 }
 
 
-void sharedPhysicsFunction(Vector2 *velocity, Vector2 *position, float deltaTime, float offset){
-    (*velocity).x *= 1/(1+deltaTime+offset);
-    (*velocity).y *= 1/(1+deltaTime+offset);
+void sharedPhysicsFunction(Vector2 *velocity, Vector2 *position, float deltaTime, float offsetX, float offsetY){
+    (*velocity).x *= 1/(1+deltaTime+offsetX);
+    (*velocity).y *= 1/(1+deltaTime+offsetY);
     *position += *velocity;
 }
 
@@ -59,12 +62,12 @@ void CollisionComponent::addCollidingObject(Component* collidingObject){
 }
 
 bool CollisionComponent::checkCollision(Component *collider1, Component *collider2){
-    float Pos1X = collider1->baseSprite->getPosition().x;
-    float Pos1Y = collider1->baseSprite->getPosition().y;
+    float Pos1X = collider1->baseSprite->getPosition().x + collider1->baseSprite->getHitboxOffsetX();
+    float Pos1Y = collider1->baseSprite->getPosition().y + collider1->baseSprite->getHitboxOffsetY();
     float length1 = collider1->baseSprite->getHitboxLength();
     float height1 = collider1->baseSprite->getHitboxHeight();
-    float Pos2X = collider2->baseSprite->getPosition().x;
-    float Pos2Y = collider2->baseSprite->getPosition().y;
+    float Pos2X = collider2->baseSprite->getPosition().x + collider2->baseSprite->getHitboxOffsetX();
+    float Pos2Y = collider2->baseSprite->getPosition().y + collider2->baseSprite->getHitboxOffsetY();
     float length2 = collider2->baseSprite->getHitboxLength();
     float height2 = collider2->baseSprite->getHitboxHeight();
 
@@ -80,9 +83,6 @@ bool CollisionComponent::checkCollision(Component *collider1, Component *collide
     if (Pos2Y + height2 < Pos1Y){
         return false;
     }
-
-    cout << "Colliding \n\n\n\n\n\n\n\n" << endl;
-
     return true;
 }
 
@@ -91,14 +91,14 @@ bool CollisionComponent::checkCollision(Component *collider1, Component *collide
 
 
 void CollisionComponent::update(float deltaTime){
+    collidingObjects.clear();
     for (auto collider : collisionObjects){
+        //cout << "Collision Updating!!!" << endl;
         if (collider != this){
             
             colliding = checkCollision(this,collider);
-            collidingObjects.clear();
             if (colliding){
                 addCollidingObject(collider);
-                cout << "Colliding Object 0" << collidingObjects[0] << endl;
             }
         }
     }
@@ -110,10 +110,12 @@ PhysicsComponent::PhysicsComponent(Sprite* baseSprite, int updateOrder):Componen
     positionPtr = (baseSprite->getPositionRefrence());
 }
 
-PhysicsComponent::~PhysicsComponent(){}
+PhysicsComponent::~PhysicsComponent(){
+    cout << "Removed Physics Component!!" << endl;
+}
 
 void PhysicsComponent::update(float deltaTime){
-    sharedPhysicsFunction(&velocity,positionPtr,deltaTime,friction);
+    sharedPhysicsFunction(&velocity,positionPtr,deltaTime,frictionX,frictionY);
 }
 
 AnimationComponent::AnimationComponent(Sprite* baseSprite, int fps, bool looping, int updateOrder): ImageComponent(baseSprite,updateOrder),fps(fps),looping(looping),currentFrame(0.0){
@@ -135,7 +137,7 @@ AnimationComponent::~AnimationComponent(){
 void AnimationComponent::update(float deltaTime){
     if (mapAnimationTextures[currentAnimationTextures].size() > 0){
         if (updateAnimation){
-            currentFrame += fps * deltaTime;
+            currentFrame += fps / 60;
         
         while(currentFrame >= mapAnimationTextures[currentAnimationTextures].size()){
             currentFrame -= mapAnimationTextures[currentAnimationTextures].size();
@@ -159,9 +161,21 @@ void ImageComponent::draw(SDL_Renderer *renderer){
         SDL_Rect rect;
         rect.w = (int)(textureWidth * baseSprite->getScale());
         rect.h = (int)(textureHeight * baseSprite->getScale());
-        rect.x = (int)(baseSprite->getPosition().x - rect.w / 2);
-        rect.y = (int)(baseSprite->getPosition().y - rect.h / 2);
-        SDL_RenderCopyEx(renderer,texture,nullptr,&rect,-Math::ToDegrees(baseSprite->getRotation()),nullptr,SDL_FLIP_NONE);
+        rect.x = (int)(baseSprite->getPosition().x);
+        rect.y = (int)(baseSprite->getPosition().y);
+        if (!flip){SDL_RenderCopyEx(renderer,texture,nullptr,&rect,-Math::ToDegrees(baseSprite->getRotation()),nullptr,SDL_FLIP_NONE);}
+        else{SDL_RenderCopyEx(renderer,texture,nullptr,&rect,-Math::ToDegrees(baseSprite->getRotation()),nullptr,SDL_FLIP_HORIZONTAL);}
+    }
+    if (baseSprite->debugCollision){
+        SDL_Rect rect;
+        rect.w = (int)(baseSprite->getHitboxLength());
+        rect.h = (int)(baseSprite->getHitboxHeight());
+        rect.x = (int)(baseSprite->getPosition().x + baseSprite->getHitboxOffsetX());
+        rect.y = (int)(baseSprite->getPosition().y + baseSprite->getHitboxOffsetY());
+        SDL_SetRenderDrawColor(renderer, 50, 50, 255, 255);
+        SDL_RenderDrawRect(renderer, &rect);
+        SDL_SetRenderDrawColor(renderer,0,0,0,255);
+        //SDL_RenderFillRect(renderer,&rect);
     }
 }
 
@@ -175,6 +189,7 @@ ImageComponent::ImageComponent(Sprite *baseSprite, int drawOrder):Component(base
 }
 ImageComponent::~ImageComponent(){
     (baseSprite->getGameInstance())->RemoveImage(this);
+    baseSprite->removeComponent(this);
     cout << "Finishing destructor in ImageComponent" << endl;
 }
 
@@ -189,11 +204,20 @@ Component::~Component(){
     baseSprite->removeComponent(this);
     cout << "Removed Component" << endl;
 }
-void Component::update(float DeltaTime){}
+void Component::update(float deltaTime){
+}
 
 
 Sprite::~Sprite(){
     cout << "Trying to remove sprite" << endl;
+    for (int i = 0; i < components.size(); i++){
+        cout << "Component " << i << ": " << components[i] << endl;
+    }
+    while(components.size() > 0){
+        cout << "Deleting Component: " << components[0] << endl; 
+        delete components[0];
+    }
+    components.clear();
     gameInstance->RemoveSprite(this);
 }
 
@@ -211,7 +235,7 @@ void Sprite::updateComponents(float deltaTime){
 }
 
 
-void Sprite::update(){}
+void Sprite::update(float deltaTime){}
 
 void Sprite::updateSprite(float deltaTime){
     if (state == Active){
@@ -245,6 +269,6 @@ void Sprite::outputComponents(){
     }
 }
 void Sprite::changeY(float y){
-    position.y += y * gameInstance->getDeltaTime();
+    position.y += y;
 }
-void Sprite::changeX(float x){position.x += x * gameInstance->getDeltaTime();}
+void Sprite::changeX(float x){position.x += x;}

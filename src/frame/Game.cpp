@@ -8,6 +8,7 @@
 using namespace std;
 
 
+
 void Game::processInput(){
     SDL_Event event;
     while (SDL_PollEvent(&event)){
@@ -23,32 +24,36 @@ void Game::processInput(){
     }
 }
 
-
+void Game::clearData(){
+    std::vector<Sprite*> deadSprites;
+    for (auto sprite : sprites){
+        if (sprite->getState() == Sprite::Dead){
+            cout <<"Trying to delete SPRITE" << endl;
+            deadSprites.emplace_back(sprite);
+        }
+    }
+    for (auto deadSprite : deadSprites){
+        cout << "DELETING SPRITE" << endl;
+        delete deadSprite;
+    }
+    deadSprites.clear();
+}
 
 void Game::updateGame(){
-    while (!SDL_TICKS_PASSED(SDL_GetTicks(), ticksThisFrame + 16));
-    deltaTime = (SDL_GetTicks() - ticksThisFrame) / 1000.0;
-    ticksThisFrame = SDL_GetTicks();
+
+    //while (!SDL_TICKS_PASSED(SDL_GetTicks(), ticksThisFrame + 16));
+    //deltaTime = (SDL_GetTicks() - ticksThisFrame) / 1000.0;
+    //ticksThisFrame = SDL_GetTicks();
     if (deltaTime > (float) 0.05) deltaTime = (float) 0.05;
     updatingSprites = true;
     for (auto sprite : sprites){
         sprite->updateSprite(deltaTime);
-        sprite->update();
+        sprite->update(deltaTime);
     }
     for (auto pendingSprite : pendingSprites){
         sprites.emplace_back(pendingSprite);
     }
     pendingSprites.clear();
-    std::vector<Sprite*> deadSprites;
-    for (auto sprite : sprites){
-        if (sprite->getState() == Sprite::Dead){
-            deadSprites.emplace_back(sprite);
-        }
-    }
-    for (auto deadSprite : deadSprites){
-        delete deadSprite;
-    }
-    deadSprites.clear();
     //SDL_SetRenderDrawColor(renderer, 255, 255, 0, 0);
     // now update game objects
 }
@@ -56,9 +61,9 @@ void Game::generateOutput(){
     for (auto imageComponent : imageComponents){
         imageComponent->draw(renderer);
     }
+    
     SDL_RenderPresent(renderer);
     SDL_RenderClear(renderer);
-    outputDelta();
 }
 
 
@@ -89,7 +94,6 @@ void Game::exitGame(){
     SDL_Quit();    
 }
 
-void Game::clearData(){}; // Instances are automatically removed from vectors at end of program. Just for new pointers really.
 
 
 
@@ -121,11 +125,17 @@ float Game::getDeltaTime(){
     return deltaTime;
 };
 void Game::initalize(const char title[], unsigned short xStart, unsigned short yStart, unsigned short width, unsigned short height, bool fullscreen){
+    SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_Init(SDL_INIT_AUDIO);
     if (fullscreen) window = SDL_CreateWindow(title,xStart,yStart,width,height,SDL_WINDOW_FULLSCREEN);
     else window = SDL_CreateWindow(title,xStart,yStart,width,height,SDL_WINDOW_RESIZABLE);
+
+    displayWidth = width;
+    displayHeight = height;
     IMG_Init(IMG_INIT_PNG);
     cout << "Game Window Created!" << endl;
     renderer = SDL_CreateRenderer(window, -1, 0);
+    SDL_GetRendererOutputSize(renderer,&displayWidth,&displayHeight);
     gameRunning = true;
 }
 void Game::AddImage(ImageComponent *imageComponent){
